@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Heart, MessageCircle, ExternalLink } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
 import api from "../../lib/api";
 
@@ -75,6 +75,7 @@ export default function PostsTab() {
             <>
               <DialogHeader>
                 <DialogTitle className="font-serif text-lg pr-6">Detalle de la publicación</DialogTitle>
+                <DialogDescription className="sr-only">Métricas y comentarios de la publicación</DialogDescription>
               </DialogHeader>
               <div className="flex gap-4 items-start">
                 {selected.picture && <img src={selected.picture} alt="" className="w-28 h-28 rounded-lg object-cover border border-[#E8E4DB]" />}

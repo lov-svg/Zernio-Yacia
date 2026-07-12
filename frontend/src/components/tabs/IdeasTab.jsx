@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Sparkles, X, MessageCircle, Mail, TrendingUp, ExternalLink, RotateCcw } from "lucide-react";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "../ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
@@ -191,6 +191,7 @@ export default function IdeasTab() {
         <DialogContent className="max-w-md" data-testid="discard-modal">
           <DialogHeader>
             <DialogTitle className="font-serif">Descartar idea</DialogTitle>
+            <DialogDescription className="sr-only">Selecciona la razón del descarte</DialogDescription>
           </DialogHeader>
           <p className="text-sm text-stone-600">¿Por qué descartas esta idea? Claude aprenderá de tu respuesta para no proponerte cosas similares.</p>
           <Select value={reasonQuick} onValueChange={setReasonQuick}>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import api from "../../lib/api";
 
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -35,8 +35,8 @@ export default function CuandoTab() {
               <div key={h} className="text-[10px] text-stone-400 text-center">{h}</div>
             ))}
             {DAYS.map((d, di) => (
-              <>
-                <div key={`label-${di}`} className="text-xs text-stone-500 font-medium flex items-center">{d}</div>
+              <Fragment key={di}>
+                <div className="text-xs text-stone-500 font-medium flex items-center">{d}</div>
                 {hours.map((h) => {
                   const s = map[`${di}-${h}`];
                   const intensity = s ? s.avg_engagement / (max || 1) : 0;
@@ -51,7 +51,7 @@ export default function CuandoTab() {
                     />
                   );
                 })}
-              </>
+              </Fragment>
             ))}
           </div>
         </div>
