@@ -1,0 +1,33 @@
+{
+  "summary": "Full E2E test of Instagram dashboard (@yaciapatisserie): 13/13 backend API tests pass; 7 tabs render, posts modal opens, demographics sub-tabs work, idea discard flow works end-to-end (idea disappears + toast + appears in Últimas descartadas).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CuandoTab", "issue": "React warning: 'Each child in a list should have a unique key prop.' in render method of CuandoTab. Needs a proper key on the mapped children (likely the best-time slot list).", "selector": "[data-testid=tab-cuando]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Modals (post-detail-modal, discard-modal, others)", "issues": ["Radix DialogContent is missing aria-describedby / Description – add DialogDescription for a11y compliance."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_dashboard_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Add unique key prop to list children rendered in CuandoTab.jsx to remove React warning.",
+    "Add DialogDescription (or aria-describedby) to all Radix Dialogs (post-detail-modal, discard-modal) for accessibility."
+  ],
+  "critical_code_review_comments": [
+    "Backend responses shape is nested (snapshot/health/last_refresh at top level for /account) – consistent and clean.",
+    "Idea discard flow correctly removes idea from active buckets and surfaces it in recent_discards.",
+    "No hardcoded URLs found in frontend calls; uses REACT_APP_BACKEND_URL."
+  ],
+  "updated_files": ["/app/backend/tests/test_dashboard_api.py"],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "100% of tested flows"},
+  "seed_data_creation": "Discarded 1 real idea from bucket 'De DMs' during test (leaves 15 active). Anthropic API NOT called – no regeneration.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend URL: https://insta-dashboard-5.preview.emergentagent.com. Ideas endpoint returns {buckets: {comments, dms, top_content}, recent_discards}. Started with 16 ideas, now 15 after test discard. Do NOT call POST /api/ideas/generate or /api/dashboard/refresh (cost/time). Test file: /app/backend/tests/test_dashboard_api.py.",
+  "rca of the issue": "N/A – no critical bugs found."
+}
