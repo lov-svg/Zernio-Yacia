@@ -1,0 +1,146 @@
+{
+  "project_context": {
+    "name": "Yacia Patisserie IG Analytics Dashboard",
+    "description": "Private Instagram analytics dashboard for a pastry chef (@yaciapatisserie, ~7,800 followers). Focuses on data tracking, engagement metrics, and AI-generated content ideas.",
+    "target_audience": "Content creator / Pastry chef. Professional, direct tone, neutral Spanish.",
+    "design_archetype": "Organic & Earthy Dashboard (Warm, professional, analytical but not cold)"
+  },
+  "theme": {
+    "mode": "light",
+    "rationale": "A patisserie brand feels naturally warmer and more appetizing in a light, earthy theme (pastry colors: cream, cocoa, terracotta). A dark theme might feel too techy or cold for a pastry chef."
+  },
+  "typography": {
+    "strategy": "The 'Old Money Tech' variant - elegant serifs for display mixed with highly legible geometric sans for data.",
+    "fonts": {
+      "headings": {
+        "family": "Playfair Display",
+        "description": "Used for main dashboard titles and AI idea headers to give an elegant, patisserie vibe.",
+        "weights": ["400", "600", "700"],
+        "classes": "font-serif tracking-tight"
+      },
+      "body_and_data": {
+        "family": "Inter",
+        "description": "Used for all data tables, KPI numbers, tooltips, and dense UI elements for maximum legibility.",
+        "weights": ["400", "500", "600"],
+        "classes": "font-sans"
+      }
+    },
+    "hierarchy": {
+      "h1": "text-3xl sm:text-4xl font-serif font-bold text-stone-900",
+      "h2": "text-xl sm:text-2xl font-serif font-semibold text-stone-800",
+      "h3": "text-lg font-sans font-medium text-stone-800",
+      "data_large": "text-3xl font-sans font-semibold text-stone-900 tracking-tight",
+      "body": "text-sm text-stone-600 font-sans",
+      "labels": "text-xs font-sans uppercase tracking-[0.1em] text-stone-500 font-medium"
+    }
+  },
+  "colors": {
+    "archetype": "Organic & Earthy",
+    "backgrounds": {
+      "app": "#FDFBF7",
+      "card": "#FFFFFF",
+      "header": "#FFFFFF",
+      "hover": "#F5F2EC"
+    },
+    "text": {
+      "primary": "#2B2724",
+      "secondary": "#5C564F",
+      "muted": "#8A847C"
+    },
+    "accents": {
+      "primary": "#D17D5B",
+      "primary_hover": "#BA6949",
+      "secondary": "#8A9A7B",
+      "tertiary": "#E6D5B8"
+    },
+    "borders": {
+      "default": "#E8E4DB",
+      "focus": "#D17D5B"
+    },
+    "charts": {
+      "color_1": "#D17D5B",
+      "color_2": "#8A9A7B",
+      "color_3": "#C0A980",
+      "color_4": "#D99B78",
+      "grid_lines": "#F0EDE6"
+    }
+  },
+  "layout_and_spacing": {
+    "strategy": "Mode B: High Density Grid (For Dashboards / Analytics)",
+    "container": "max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8",
+    "header": "h-20 border-b border-[#E8E4DB] bg-white/70 backdrop-blur-xl sticky top-0 z-50 flex items-center justify-between",
+    "spacing_scale": "Use generous padding for containers: p-6 or p-8 for cards to let data breathe.",
+    "grid_system": {
+      "kpi_cards": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6",
+      "charts": "grid grid-cols-1 lg:grid-cols-3 gap-6",
+      "posts_grid": "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+    },
+    "surfaces": "Neumorphism 'Clay & Crisp': Flat backgrounds (bg-white), crisp 1px borders (border-[#E8E4DB]), minimal subtle shadows (shadow-sm) to avoid a heavy look. Radius: rounded-xl."
+  },
+  "components": {
+    "header": {
+      "description": "Sticky top bar showing IG profile photo, '@yaciapatisserie', ~7.8K followers, account health indicator (green dot/text), last updated timestamp, and a primary 'Actualizar datos' button."
+    },
+    "tabs": {
+      "description": "Shadcn Tabs customized. Tab list should scroll horizontally on mobile. Active tab: border-b-2 border-[#D17D5B] text-[#D17D5B]."
+    },
+    "kpi_cards": {
+      "description": "Used in 'Resumen'. Flat rectangular cards, 1px border. Icon top right, Label top left, large Value bottom left, percentage change (+/-) bottom right in green/red."
+    },
+    "charts": {
+      "description": "Use Recharts. Line charts for 'Tendencia' (90 days). Bar charts for 'Audiencia' (demographics). Heatmap for 'Cuándo publicar' (custom grid of colored squares). Scatter chart for 'Frecuencia'."
+    },
+    "ideas_section": {
+      "description": "Tab 7. Main button 'Generar todas las ideas'. 3 Buckets (Comentarios, DMs, Top Content). Cards for ideas showing Title/Format, Quotes, and 'Why it works'. Includes 'Descartar idea' button which opens a Dialog modal."
+    },
+    "posts_grid": {
+      "description": "Tab 4. Image grid of Instagram posts. Hover state shows engagement overlay. Click opens Dialog with real comments."
+    }
+  },
+  "motion_and_interactions": {
+    "hover_states": "Cards lift slightly (-translate-y-1) with enhanced shadow (shadow-md) on hover. Buttons have subtle background color transitions.",
+    "active_states": "Scale down slightly (scale-95) on click.",
+    "transitions": "transition-all duration-200 ease-in-out",
+    "page_load": "Staggered fade-in for dashboard widgets (framer-motion or simple CSS animation)."
+  },
+  "assets": {
+    "icons": {
+      "library": "lucide-react",
+      "usage": "Use thin stroke icons (strokeWidth={1.5}). Avoid filled icons to keep the interface light."
+    },
+    "images": {
+      "profile_photo": "https://images.unsplash.com/photo-1586447752547-a7580862bd7b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxmZW1hbGUlMjBjaGVmJTIwcGFzdHJ5JTIwcG9ydHJhaXQlMjBzbWlsaW5nfGVufDB8fHx8MTc4Mzg4NDIxMXww&ixlib=rb-4.1.0&q=85",
+      "posts_thumbnails": [
+        "https://images.unsplash.com/photo-1567941723610-db0bcb4cca67?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHw0fHx5dW1teSUyMHBhc3RyeSUyMHBhdGlzc2VyaWUlMjBkZXNzZXJ0fGVufDB8fHx8MTc4Mzg4NDIxMnww&ixlib=rb-4.1.0&q=85",
+        "https://images.unsplash.com/photo-1691052252990-4cd1fdda73dc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHwzfHx5dW1teSUyMHBhc3RyeSUyMHBhdGlzc2VyaWUlMjBkZXNzZXJ0fGVufDB8fHx8MTc4Mzg4NDIxMnww&ixlib=rb-4.1.0&q=85",
+        "https://images.unsplash.com/photo-1583338917451-face2751d8d5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHwxfHx5dW1teSUyMHBhc3RyeSUyMHBhdGlzc2VyaWUlMjBkZXNzZXJ0fGVufDB8fHx8MTc4Mzg4NDIxMnww&ixlib=rb-4.1.0&q=85",
+        "https://images.unsplash.com/photo-1609590981063-d495e2914ce4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHwyfHx5dW1teSUyMHBhc3RyeSUyMHBhdGlzc2VyaWUlMjBkZXNzZXJ0fGVufDB8fHx8MTc4Mzg4NDIxMnww&ixlib=rb-4.1.0&q=85"
+      ]
+    }
+  },
+  "accessibility": {
+    "contrast": "Ensure text colors against #FDFBF7 meet at least 4.5:1. Primary accent (#D17D5B) must have white text inside buttons.",
+    "testing": "All interactive elements (tabs, buttons, dropdowns, post cards, dismiss buttons) MUST have a `data-testid` attribute (e.g., `data-testid=\"refresh-data-btn\"`, `data-testid=\"tab-ideas\"`)."
+  },
+  "instructions_to_main_agent": {
+    "1": "Set up Tailwind config with custom colors defined in 'colors' section and fonts in 'typography'. Add Playfair Display from Google Fonts.",
+    "2": "Create a unified Layout component that includes the Header (fixed top, profile image, status, refresh btn).",
+    "3": "Implement Shadcn Tabs for navigating the 7 sections. Ensure it scrolls horizontally on small screens.",
+    "4": "For 'Tab 1: Resumen', create a generic KPICard component. Map over mock data.",
+    "5": "For 'Tab 2, 3, 5, 6', implement Recharts. Use a custom responsive container and tooltips that match the aesthetic. For the heatmap (Tab 5), build a grid of divs colored by value intensity.",
+    "6": "For 'Tab 4: Posts', use the provided `posts_thumbnails` for a photo grid. Add hover overlays showing likes/comments icons.",
+    "7": "For 'Tab 7: Ideas', implement the complex AI card layout with 3 distinct visual blocks. Include the 'Descartar' logic which triggers a Shadcn Dialog.",
+    "8": "Mock the 'Zernio API' and 'Claude AI' data directly in a constants/mockData file to simulate the dashboard states.",
+    "9": "UI text MUST be completely in Spanish, as per requirements."
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not center-align the app container (`.App { text-align: center; }` is forbidden).",
+    "Use 2-3x more spacing than feels comfortable (e.g., p-6 or p-8 inside cards).",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Use glass-morphism effects with backdrop filters for sticky headers.",
+    "NEVER use AI assistant Emoji characters (🤖🧠💭💡🔮🎯) for icons. Use lucide-react.",
+    "NEVER use placeholder image URLs. Use the assets provided.",
+    "Prioritize using Shadcn components over custom HTML for advanced interactions (Dialog, Tabs, Select).",
+    "All interactive elements MUST have `data-testid`."
+  ]
+}
