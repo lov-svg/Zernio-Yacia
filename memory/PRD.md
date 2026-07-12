@@ -33,6 +33,15 @@ ZERNIO_API_KEY, ZERNIO_ACCOUNT_ID=6a3b100d9d9472faaeca6e44, ANTHROPIC_API_KEY, D
 - [x] UI 7 tabs completa, testing agent 13/13 backend + 100% frontend
 - [x] Fixes: React key en heatmap, DialogDescription a11y
 
+## Implementado (2026-07 / sesión 2 — métricas adicionales estilo Sendible)
+- [x] `/api/dashboard/overview` amplía `last30` con impresiones/reach/views/engagement_rate y devuelve `best_post`
+- [x] `/api/dashboard/posts` enriquece cada post con reach/impresiones/vistas/shares/saves/engagement_rate cuando el día tiene 1 sola publicación
+- [x] NUEVO `/api/dashboard/inbox`: totales (recibidos, enviados, conversaciones, tiempo mediano de respuesta, sin respuesta), 7 buckets de tiempo de respuesta, series diaria received vs sent, heatmap 7×24 de mensajes entrantes (tz local), top 10 participantes
+- [x] ResumenTab: nueva sección "Rendimiento de publicaciones (30 días)" con 4 KPIs y card de "Mejor publicación"
+- [x] PostsTab: nueva tabla "Top publicaciones (con métricas detalladas)" con 9 columnas
+- [x] NUEVA pestaña "Bandeja" con 5 KPIs + gráfico líneas + gráfico barras respuesta + heatmap + tabla top participantes
+- [x] Testing agent iteration_2.json: 9/9 backend + frontend sin issues
+
 ## Backlog priorizado
 - P1: Botón/aviso para regenerar cuando los datos tengan más de N días
 - P1: Paginación de posts en Zernio (hoy trae los 25 más recientes)
