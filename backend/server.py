@@ -73,10 +73,26 @@ def overview():
         agg = _rows(conn, """
             SELECT COALESCE(SUM(likes),0) likes, COALESCE(SUM(comments),0) comments,
                    COALESCE(SUM(saves),0) saves, COALESCE(SUM(shares),0) shares,
-                   COALESCE(SUM(post_count),0) posts
+                   COALESCE(SUM(impressions),0) impressions, COALESCE(SUM(reach),0) reach,
+                   COALESCE(SUM(views),0) views, COALESCE(SUM(post_count),0) posts
             FROM daily_metrics WHERE date >= :c""", c=cutoff)
         fh = _rows(conn, "SELECT * FROM follower_history ORDER BY date DESC LIMIT 1")
-    return {"insights": insights, "last30": agg[0] if agg else {}, "followers": fh[0] if fh else None}
+        snap = _rows(conn, "SELECT followers_count FROM account_snapshot WHERE platform='instagram'")
+        best = _rows(conn, """
+            SELECT id, caption, permalink, picture, like_count, comment_count,
+                   (like_count + comment_count * 3) AS score
+            FROM posts ORDER BY score DESC LIMIT 1""")
+    followers = (snap[0]["followers_count"] if snap else 0) or 0
+    l30 = agg[0] if agg else {}
+    interactions = (l30.get("likes", 0) + l30.get("comments", 0) + l30.get("saves", 0) + l30.get("shares", 0))
+    reach = l30.get("reach", 0) or 0
+    l30["engagement_rate"] = round((interactions / reach) * 100, 2) if reach else 0.0
+    return {
+        "insights": insights,
+        "last30": l30,
+        "followers": fh[0] if fh else None,
+        "best_post": best[0] if best else None,
+    }
 
 
 @api.get("/dashboard/trend")
@@ -108,7 +124,27 @@ def posts(sort: str = "engagement"):
     }.get(sort, "(like_count + comment_count*3) DESC")
     with db.get_engine().connect() as conn:
         rows = _rows(conn, f"SELECT * FROM posts ORDER BY {order}")
-    return {"posts": rows}
+        dm = _rows(conn, "SELECT * FROM daily_metrics")
+        snap = _rows(conn, "SELECT followers_count FROM account_snapshot WHERE platform='instagram'")
+    dm_by_date = {}
+    for d in dm:
+        dm_by_date.setdefault(d["date"], []).append(d)
+    followers = (snap[0]["followers_count"] if snap else 0) or 0
+    for p in rows:
+        d = (p.get("created_time") or "")[:10]
+        entries = dm_by_date.get(d, [])
+        one_post_day = len(entries) == 1 and (entries[0].get("post_count") or 0) == 1
+        m = entries[0] if one_post_day else {}
+        p["reach"] = m.get("reach")
+        p["impressions"] = m.get("impressions")
+        p["views"] = m.get("views")
+        p["shares"] = m.get("shares")
+        p["saves"] = m.get("saves")
+        interactions = (p.get("like_count") or 0) + (p.get("comment_count") or 0) \
+            + (p.get("shares") or 0) + (p.get("saves") or 0)
+        reach_val = p.get("reach") or 0
+        p["engagement_rate"] = round((interactions / reach_val) * 100, 2) if reach_val else None
+    return {"posts": rows, "followers": followers}
 
 
 @api.get("/dashboard/posts/{post_id}/comments")
@@ -142,6 +178,130 @@ def frequency():
         freq = _rows(conn, "SELECT * FROM posting_frequency ORDER BY posts_per_week")
         decay = _rows(conn, "SELECT * FROM content_decay ORDER BY bucket_order")
     return {"frequency": freq, "decay": decay}
+
+
+@api.get("/dashboard/inbox")
+def inbox():
+    from collections import defaultdict
+    tz = ZoneInfo(TZ)
+    with db.get_engine().connect() as conn:
+        msgs = _rows(conn, "SELECT * FROM messages ORDER BY created_at")
+        convs = _rows(conn, "SELECT * FROM conversations")
+    received = sum(1 for m in msgs if m["direction"] == "incoming")
+    sent = sum(1 for m in msgs if m["direction"] == "outgoing")
+
+    # Agrupar mensajes por conversación
+    by_conv = defaultdict(list)
+    for m in msgs:
+        by_conv[m["conversation_id"]].append(m)
+
+    # Tiempo de respuesta: por cada mensaje entrante seguido de saliente, medir delta.
+    response_deltas = []
+    waiting = 0
+    for cid, arr in by_conv.items():
+        pending_inc = None
+        for m in arr:
+            if not m.get("created_at"):
+                continue
+            try:
+                ts = datetime.fromisoformat(m["created_at"].replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                continue
+            if m["direction"] == "incoming":
+                if pending_inc is None:
+                    pending_inc = ts
+            elif m["direction"] == "outgoing" and pending_inc is not None:
+                delta = (ts - pending_inc).total_seconds()
+                if delta >= 0:
+                    response_deltas.append(delta)
+                pending_inc = None
+        if pending_inc is not None:
+            waiting += 1
+
+    def _median(vals):
+        if not vals:
+            return None
+        s = sorted(vals)
+        n = len(s)
+        return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2
+
+    median_resp = _median(response_deltas)
+
+    # Buckets de tiempo de respuesta
+    bucket_defs = [
+        ("0-1m", 0, 60),
+        ("1-5m", 60, 300),
+        ("5-15m", 300, 900),
+        ("15-60m", 900, 3600),
+        ("1-4h", 3600, 14400),
+        ("4-24h", 14400, 86400),
+        ("1d+", 86400, float("inf")),
+    ]
+    buckets = []
+    total = len(response_deltas)
+    cum = 0
+    for label, lo, hi in bucket_defs:
+        n = sum(1 for d in response_deltas if lo <= d < hi)
+        cum += n
+        buckets.append({"label": label, "count": n, "pct_cumulative": round(cum / total * 100) if total else 0})
+
+    # Mensajes en el tiempo (por día, tz local)
+    over_time_map = defaultdict(lambda: {"received": 0, "sent": 0})
+    for m in msgs:
+        if not m.get("created_at"):
+            continue
+        try:
+            ts = datetime.fromisoformat(m["created_at"].replace("Z", "+00:00")).astimezone(tz)
+        except (ValueError, TypeError):
+            continue
+        d = ts.date().isoformat()
+        key = "received" if m["direction"] == "incoming" else "sent"
+        over_time_map[d][key] += 1
+    over_time = [{"date": d, **v} for d, v in sorted(over_time_map.items())]
+
+    # Heatmap: cuándo llegan los mensajes (entrantes) por día de semana × hora local
+    heatmap = defaultdict(int)
+    for m in msgs:
+        if m["direction"] != "incoming" or not m.get("created_at"):
+            continue
+        try:
+            ts = datetime.fromisoformat(m["created_at"].replace("Z", "+00:00")).astimezone(tz)
+        except (ValueError, TypeError):
+            continue
+        heatmap[(ts.weekday(), ts.hour)] += 1
+    heatmap_slots = [{"day_of_week": d, "hour": h, "count": c} for (d, h), c in heatmap.items()]
+
+    # Top participantes
+    conv_meta = {c["id"]: c for c in convs}
+    top = []
+    for cid, arr in by_conv.items():
+        meta = conv_meta.get(cid, {})
+        recv = sum(1 for m in arr if m["direction"] == "incoming")
+        snt = sum(1 for m in arr if m["direction"] == "outgoing")
+        top.append({
+            "conversation_id": cid,
+            "name": meta.get("participant_name") or meta.get("participant_username") or "—",
+            "username": meta.get("participant_username"),
+            "received": recv,
+            "sent": snt,
+            "total": recv + snt,
+        })
+    top.sort(key=lambda x: x["total"], reverse=True)
+
+    return {
+        "totals": {
+            "received": received,
+            "sent": sent,
+            "conversations": len(convs),
+            "median_response_seconds": median_resp,
+            "waiting_reply": waiting,
+        },
+        "response_time_buckets": buckets,
+        "over_time": over_time,
+        "when_messages_land": heatmap_slots,
+        "top_participants": top[:10],
+        "timezone": TZ,
+    }
 
 
 @api.get("/ideas")

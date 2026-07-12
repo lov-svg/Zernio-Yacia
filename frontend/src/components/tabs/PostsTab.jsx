@@ -4,6 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
 import api from "../../lib/api";
 
+const fmt = (n) => (n == null ? "—" : Number(n).toLocaleString("es-MX"));
+const fmtPct = (n) => (n == null ? "—" : `${Number(n).toFixed(2)}%`);
+
 export default function PostsTab() {
   const [posts, setPosts] = useState(null);
   const [sort, setSort] = useState("engagement");
@@ -20,14 +23,14 @@ export default function PostsTab() {
     try {
       const r = await api.get(`/dashboard/posts/${p.id}/comments`);
       setComments(r.data.comments);
-    } catch {}
+    } catch { /* noop */ }
   };
 
   if (!posts) return <p className="text-stone-500 text-sm py-12">Cargando…</p>;
   if (!posts.length) return <p className="text-stone-500 py-20 text-center" data-testid="posts-empty">Sin datos. Pulsa Actualizar datos.</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-xl sm:text-2xl font-serif font-semibold text-stone-800">Publicaciones ({posts.length})</h2>
         <Select value={sort} onValueChange={setSort}>
@@ -69,6 +72,54 @@ export default function PostsTab() {
         ))}
       </div>
 
+      <div>
+        <h3 className="text-lg sm:text-xl font-serif font-semibold text-stone-800 mb-4">Top publicaciones (con métricas detalladas)</h3>
+        <div className="bg-white border border-[#E8E4DB] rounded-xl shadow-sm overflow-x-auto" data-testid="posts-top-table">
+          <table className="w-full text-sm">
+            <thead className="bg-[#FDFBF7] border-b border-[#E8E4DB]">
+              <tr className="text-left text-xs uppercase tracking-wider text-stone-500">
+                <th className="px-4 py-3 font-medium">Post</th>
+                <th className="px-3 py-3 font-medium text-right">Likes</th>
+                <th className="px-3 py-3 font-medium text-right">Comentarios</th>
+                <th className="px-3 py-3 font-medium text-right">Guardados</th>
+                <th className="px-3 py-3 font-medium text-right">Compartidos</th>
+                <th className="px-3 py-3 font-medium text-right">Vistas</th>
+                <th className="px-3 py-3 font-medium text-right">Alcance</th>
+                <th className="px-3 py-3 font-medium text-right">Impresiones</th>
+                <th className="px-3 py-3 font-medium text-right">ER</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F0EDE6]">
+              {posts.slice(0, 10).map((p) => (
+                <tr key={p.id} className="hover:bg-[#FDFBF7] transition-colors">
+                  <td className="px-4 py-3">
+                    <button onClick={() => openPost(p)} className="flex items-center gap-3 text-left" data-testid={`top-post-row-${p.id}`}>
+                      {p.picture && <img src={p.picture} alt="" className="w-10 h-10 rounded object-cover border border-[#E8E4DB]" />}
+                      <div className="min-w-0 max-w-[240px]">
+                        <p className="text-xs text-stone-700 line-clamp-1">{p.caption || "Sin descripción"}</p>
+                        <p className="text-xs text-stone-400">{p.created_time ? new Date(p.created_time).toLocaleDateString("es-MX") : ""}</p>
+                      </div>
+                    </button>
+                  </td>
+                  <td className="px-3 py-3 text-right tabular-nums text-stone-700">{fmt(p.like_count)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-stone-700">{fmt(p.comment_count)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-stone-700">{fmt(p.saves)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-stone-700">{fmt(p.shares)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-stone-700">{fmt(p.views)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-stone-700">{fmt(p.reach)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-stone-700">{fmt(p.impressions)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-[#D17D5B]">{fmtPct(p.engagement_rate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-stone-400 mt-2">
+          Métricas por publicación derivadas de tus datos diarios. ER = Interacciones / Alcance × 100.
+          Cuando en un día publicaste más de una vez, las columnas de Alcance/Impresiones/Vistas aparecen vacías porque Instagram no las separa.
+        </p>
+      </div>
+
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="post-detail-modal">
           {selected && (
@@ -81,9 +132,12 @@ export default function PostsTab() {
                 {selected.picture && <img src={selected.picture} alt="" className="w-28 h-28 rounded-lg object-cover border border-[#E8E4DB]" />}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-stone-700">{selected.caption}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-stone-500">
+                  <div className="flex items-center gap-4 mt-2 text-sm text-stone-500 flex-wrap">
                     <span className="flex items-center gap-1"><Heart className="w-4 h-4 text-[#D17D5B]" strokeWidth={1.5} />{selected.like_count} likes</span>
                     <span className="flex items-center gap-1"><MessageCircle className="w-4 h-4 text-[#8A9A7B]" strokeWidth={1.5} />{selected.comment_count} comentarios</span>
+                    {selected.reach != null && <span>· Alcance {fmt(selected.reach)}</span>}
+                    {selected.impressions != null && <span>· Impresiones {fmt(selected.impressions)}</span>}
+                    {selected.engagement_rate != null && <span>· ER {fmtPct(selected.engagement_rate)}</span>}
                   </div>
                   {selected.permalink && (
                     <a href={selected.permalink} target="_blank" rel="noopener noreferrer" data-testid="post-permalink-link"

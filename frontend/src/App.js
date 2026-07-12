@@ -10,6 +10,7 @@ import PostsTab from "@/components/tabs/PostsTab";
 import CuandoTab from "@/components/tabs/CuandoTab";
 import FrecuenciaTab from "@/components/tabs/FrecuenciaTab";
 import IdeasTab from "@/components/tabs/IdeasTab";
+import BandejaTab from "@/components/tabs/BandejaTab";
 import api from "@/lib/api";
 
 const TABS = [
@@ -19,6 +20,7 @@ const TABS = [
   { value: "posts", label: "Posts" },
   { value: "cuando", label: "Cuándo publicar" },
   { value: "frecuencia", label: "Frecuencia" },
+  { value: "bandeja", label: "Bandeja" },
   { value: "ideas", label: "Ideas" },
 ];
 
@@ -58,6 +60,7 @@ function App() {
           <TabsContent value="posts" key={`p-${refreshKey}`}><PostsTab /></TabsContent>
           <TabsContent value="cuando" key={`c-${refreshKey}`}><CuandoTab /></TabsContent>
           <TabsContent value="frecuencia" key={`f-${refreshKey}`}><FrecuenciaTab /></TabsContent>
+          <TabsContent value="bandeja" key={`b-${refreshKey}`}><BandejaTab /></TabsContent>
           <TabsContent value="ideas"><IdeasTab /></TabsContent>
         </Tabs>
       </main>
