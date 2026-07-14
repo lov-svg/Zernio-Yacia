@@ -67,32 +67,111 @@ def refresh():
 
 @api.get("/dashboard/overview")
 def overview():
+    now = datetime.now(timezone.utc)
+    cur_start = (now - timedelta(days=30)).date().isoformat()
+    prior_start = (now - timedelta(days=60)).date().isoformat()
+    prior_end = cur_start
     with db.get_engine().connect() as conn:
         insights = _rows(conn, "SELECT * FROM account_insights_30d")
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).date().isoformat()
-        agg = _rows(conn, """
+        agg_sql = """
             SELECT COALESCE(SUM(likes),0) likes, COALESCE(SUM(comments),0) comments,
                    COALESCE(SUM(saves),0) saves, COALESCE(SUM(shares),0) shares,
                    COALESCE(SUM(impressions),0) impressions, COALESCE(SUM(reach),0) reach,
                    COALESCE(SUM(views),0) views, COALESCE(SUM(post_count),0) posts
-            FROM daily_metrics WHERE date >= :c""", c=cutoff)
-        fh = _rows(conn, "SELECT * FROM follower_history ORDER BY date DESC LIMIT 1")
+            FROM daily_metrics WHERE date >= :a AND date < :b"""
+        cur = _rows(conn, agg_sql, a=cur_start, b=now.date().isoformat() + "z")
+        prior = _rows(conn, agg_sql, a=prior_start, b=prior_end)
+        fh_recent = _rows(conn, "SELECT * FROM follower_history ORDER BY date DESC LIMIT 1")
         snap = _rows(conn, "SELECT followers_count FROM account_snapshot WHERE platform='instagram'")
         best = _rows(conn, """
             SELECT id, caption, permalink, picture, like_count, comment_count,
                    (like_count + comment_count * 3) AS score
             FROM posts ORDER BY score DESC LIMIT 1""")
-    followers = (snap[0]["followers_count"] if snap else 0) or 0
-    l30 = agg[0] if agg else {}
-    interactions = (l30.get("likes", 0) + l30.get("comments", 0) + l30.get("saves", 0) + l30.get("shares", 0))
-    reach = l30.get("reach", 0) or 0
-    l30["engagement_rate"] = round((interactions / reach) * 100, 2) if reach else 0.0
+        # Semanal (últimas 5 semanas iso, ancladas al lunes)
+        weekly = _rows(conn, """
+            SELECT to_char(date_trunc('week', date::date), 'YYYY-MM-DD') AS week_start,
+                   COALESCE(SUM(post_count),0) posts,
+                   COALESCE(SUM(likes),0) likes,
+                   COALESCE(SUM(comments),0) comments,
+                   COALESCE(SUM(shares),0) shares,
+                   COALESCE(SUM(saves),0) saves,
+                   COALESCE(SUM(reach),0) reach,
+                   COALESCE(SUM(impressions),0) impressions,
+                   COALESCE(SUM(views),0) views
+            FROM daily_metrics WHERE date >= :a
+            GROUP BY 1 ORDER BY 1""", a=(now - timedelta(days=35)).date().isoformat())
+        daily_last30 = _rows(conn, """
+            SELECT * FROM daily_metrics WHERE date >= :a ORDER BY date""", a=cur_start)
+        fh_series = _rows(conn, """
+            SELECT * FROM follower_history WHERE date >= :a ORDER BY date""",
+            a=(now - timedelta(days=30)).date().isoformat())
+        top_posts = _rows(conn, """
+            SELECT id, caption, permalink, picture, created_time, like_count, comment_count,
+                   (like_count + comment_count * 3) AS score
+            FROM posts ORDER BY score DESC LIMIT 6""")
+        freq = _rows(conn, "SELECT * FROM posting_frequency ORDER BY posts_per_week")
+        decay = _rows(conn, "SELECT * FROM content_decay ORDER BY bucket_order")
+
+    followers_now = (snap[0]["followers_count"] if snap else 0) or 0
+    fh_30d_ago = _rows_get_delta(fh_series, followers_now)
+
+    l30 = cur[0] if cur else {}
+    p30 = prior[0] if prior else {}
+    interactions_cur = (l30.get("likes", 0) + l30.get("comments", 0)
+                        + l30.get("saves", 0) + l30.get("shares", 0))
+    interactions_prior = (p30.get("likes", 0) + p30.get("comments", 0)
+                          + p30.get("saves", 0) + p30.get("shares", 0))
+    reach_cur = l30.get("reach", 0) or 0
+    reach_prior = p30.get("reach", 0) or 0
+    l30["engagement_rate"] = round((interactions_cur / reach_cur) * 100, 2) if reach_cur else 0.0
+    p30["engagement_rate"] = round((interactions_prior / reach_prior) * 100, 2) if reach_prior else 0.0
+
+    # Merge daily reach/impresiones a los top_posts (para tabla Top Performing)
+    dm_by_date = {}
+    for d in daily_last30:
+        dm_by_date.setdefault(d["date"], []).append(d)
+    for p in top_posts:
+        d = (p.get("created_time") or "")[:10]
+        entries = dm_by_date.get(d, [])
+        one = len(entries) == 1 and (entries[0].get("post_count") or 0) == 1
+        m = entries[0] if one else {}
+        p["reach"] = m.get("reach")
+        p["impressions"] = m.get("impressions")
+        p["views"] = m.get("views")
+        p["shares"] = m.get("shares")
+        p["saves"] = m.get("saves")
+        inter = (p.get("like_count") or 0) + (p.get("comment_count") or 0) \
+            + (p.get("shares") or 0) + (p.get("saves") or 0)
+        p["engagement_rate"] = round((inter / (m.get("reach") or 0)) * 100, 2) if m.get("reach") else None
+
     return {
         "insights": insights,
         "last30": l30,
-        "followers": fh[0] if fh else None,
+        "prior30": p30,
+        "followers": {"count": followers_now, "delta_30d": followers_now - fh_30d_ago},
+        "follower_history_30d": fh_series,
+        "follower_last": fh_recent[0] if fh_recent else None,
         "best_post": best[0] if best else None,
+        "weekly": weekly,
+        "daily_last30": daily_last30,
+        "top_posts": top_posts,
+        "platform_breakdown": [{
+            "platform": "instagram", "posts": l30.get("posts", 0),
+            "likes": l30.get("likes", 0), "comments": l30.get("comments", 0),
+            "shares": l30.get("shares", 0), "saves": l30.get("saves", 0),
+            "views": l30.get("views", 0), "impressions": l30.get("impressions", 0),
+            "reach": l30.get("reach", 0), "engagement_rate": l30.get("engagement_rate", 0),
+        }],
+        "frequency": freq,
+        "accumulation": decay,
     }
+
+
+def _rows_get_delta(fh_series, current):
+    """Devuelve el follower_count más antiguo de la serie, para calcular delta."""
+    if not fh_series:
+        return current
+    return fh_series[0].get("follower_count") or current
 
 
 @api.get("/dashboard/trend")
