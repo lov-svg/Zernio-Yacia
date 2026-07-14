@@ -3,7 +3,7 @@ FROM node:20-slim AS build
 WORKDIR /app
 
 COPY package.json yarn.lock* package-lock.json* ./
-RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; else npm install --legacy-peer-deps; fi
+RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; else npm install --legacy-peer-deps && npm install ajv --legacy-peer-deps; fi
 
 COPY . .
 
