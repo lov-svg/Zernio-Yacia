@@ -4,8 +4,11 @@ import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import requests
+from io import BytesIO
 
 from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -41,6 +44,23 @@ def _rows(conn, sql, **params):
 @api.get("/")
 def root():
     return {"message": "Dashboard Instagram API"}
+
+
+@api.get("/profile-picture")
+def profile_picture():
+    """Proxy profile picture from Instagram to bypass CORS"""
+    with db.get_engine().connect() as conn:
+        snap = _rows(conn, "SELECT profile_picture FROM account_snapshot WHERE platform = 'instagram'")
+    pic_url = snap[0].get("profile_picture") if snap else None
+    if not pic_url:
+        raise HTTPException(status_code=404, detail="Profile picture not found")
+    try:
+        resp = requests.get(pic_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+        return StreamingResponse(BytesIO(resp.content), media_type=resp.headers.get("content-type", "image/jpeg"), headers={"Cache-Control": "public, max-age=3600"})
+    except Exception as e:
+        logging.exception("failed to proxy profile picture")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @api.get("/dashboard/account")

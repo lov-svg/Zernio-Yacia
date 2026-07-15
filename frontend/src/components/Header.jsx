@@ -29,7 +29,7 @@ export const Header = ({ account, onRefreshed }) => {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
           {snap?.profile_picture ? (
-            <img src={snap.profile_picture} alt={snap.username} className="w-12 h-12 rounded-full object-cover border-2 border-[#D17D5B]" />
+            <img src={`${process.env.REACT_APP_BACKEND_URL}/api/profile-picture`} alt={snap.username} className="w-12 h-12 rounded-full object-cover border-2 border-[#D17D5B]" />
           ) : (
             <div className="w-12 h-12 rounded-full bg-[#F5F2EC] flex items-center justify-center">
               <Users className="w-5 h-5 text-[#8A847C]" strokeWidth={1.5} />
