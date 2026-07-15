@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw, Users, CircleCheck, CircleAlert } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import api from "../lib/api";
 
+const PROFILE_PIC_URL = `${api.defaults.baseURL}/profile-picture`;
+
 export const Header = ({ account, onRefreshed }) => {
   const [refreshing, setRefreshing] = useState(false);
+  const [picError, setPicError] = useState(false);
   const snap = account?.snapshot;
   const health = account?.health;
   const last = account?.last_refresh;
@@ -28,8 +31,8 @@ export const Header = ({ account, onRefreshed }) => {
     <header className="sticky top-0 z-50 border-b border-[#E8E4DB] bg-white/70 backdrop-blur-xl" data-testid="dashboard-header">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
-          {snap?.profile_picture ? (
-            <img src={`${process.env.REACT_APP_BACKEND_URL}/api/profile-picture`} alt={snap.username} className="w-12 h-12 rounded-full object-cover border-2 border-[#D17D5B]" />
+          {snap?.profile_picture && !picError ? (
+            <img src={PROFILE_PIC_URL} alt={snap.username} className="w-12 h-12 rounded-full object-cover border-2 border-[#D17D5B]" onError={() => setPicError(true)} />
           ) : (
             <div className="w-12 h-12 rounded-full bg-[#F5F2EC] flex items-center justify-center">
               <Users className="w-5 h-5 text-[#8A847C]" strokeWidth={1.5} />
