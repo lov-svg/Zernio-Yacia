@@ -30,7 +30,7 @@ ACCOUNT_ID = os.environ["ZERNIO_ACCOUNT_ID"]
 TZ = os.environ.get("DASHBOARD_TZ", "America/Mexico_City")
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
 
-PUBLIC_PATHS = {"/api", "/api/"}
+PUBLIC_PATHS = {"/api", "/api/", "/api/profile-picture"}
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -45,7 +45,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         token = auth[7:]
         try:
             pyjwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
-        except Exception:
+        except Exception as e:
+            logging.error("JWT decode failed: %s | secret length: %d", e, len(SUPABASE_JWT_SECRET))
             return JSONResponse(status_code=401, content={"detail": "Token inválido o expirado"})
         return await call_next(request)
 
