@@ -15,6 +15,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from sqlalchemy import text
 import jwt as pyjwt
+from jwt import PyJWKClient
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=True)
@@ -29,6 +30,14 @@ api = APIRouter(prefix="/api")
 ACCOUNT_ID = os.environ["ZERNIO_ACCOUNT_ID"]
 TZ = os.environ.get("DASHBOARD_TZ", "America/Mexico_City")
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+_jwks_client = None
+
+def _get_jwks_client():
+    global _jwks_client
+    if _jwks_client is None and SUPABASE_URL:
+        _jwks_client = PyJWKClient(f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json")
+    return _jwks_client
 
 PUBLIC_PATHS = {"/api", "/api/", "/api/profile-picture"}
 
@@ -44,9 +53,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=401, content={"detail": "No autorizado"})
         token = auth[7:]
         try:
-            pyjwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+            jwks = _get_jwks_client()
+            if jwks:
+                signing_key = jwks.get_signing_key_from_jwt(token)
+                pyjwt.decode(token, signing_key.key, algorithms=["ES256"], audience="authenticated")
+            else:
+                pyjwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
         except Exception as e:
-            logging.error("JWT decode failed: %s | secret length: %d", e, len(SUPABASE_JWT_SECRET))
+            logging.error("JWT decode failed: %s", e)
             return JSONResponse(status_code=401, content={"detail": "Token inválido o expirado"})
         return await call_next(request)
 

@@ -10,6 +10,7 @@ services:
       DASHBOARD_TZ: ${DASHBOARD_TZ:-America/Mexico_City}
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      SUPABASE_URL: ${REACT_APP_SUPABASE_URL}
     expose:
       - "8000"
     restart: unless-stopped
