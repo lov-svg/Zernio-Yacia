@@ -48,19 +48,21 @@ def root():
 
 @api.get("/profile-picture")
 def profile_picture():
-    """Proxy profile picture from Instagram to bypass CORS"""
-    with db.get_engine().connect() as conn:
-        snap = _rows(conn, "SELECT profile_picture FROM account_snapshot WHERE platform = 'instagram'")
-    pic_url = snap[0].get("profile_picture") if snap else None
+    """Fetch fresh profile picture URL from Zernio and proxy it"""
+    try:
+        accounts = refresh_service.z.list_accounts("instagram").get("accounts", [])
+        pic_url = accounts[0].get("profilePicture") if accounts else None
+    except Exception:
+        pic_url = None
     if not pic_url:
         raise HTTPException(status_code=404, detail="Profile picture not found")
     try:
-        resp = requests.get(pic_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        resp = requests.get(pic_url, timeout=10)
         resp.raise_for_status()
-        return StreamingResponse(BytesIO(resp.content), media_type=resp.headers.get("content-type", "image/jpeg"), headers={"Cache-Control": "public, max-age=3600"})
+        return StreamingResponse(BytesIO(resp.content), media_type=resp.headers.get("content-type", "image/jpeg"), headers={"Cache-Control": "public, max-age=1800"})
     except Exception as e:
         logging.exception("failed to proxy profile picture")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @api.get("/dashboard/account")
