@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { RefreshCw, Users, CircleCheck, CircleAlert } from "lucide-react";
+import { RefreshCw, Users, CircleCheck, CircleAlert, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import api from "../lib/api";
+import supabase from "../lib/supabase";
 
 const PROFILE_PIC_URL = `${api.defaults.baseURL}/profile-picture`;
 
@@ -73,6 +74,13 @@ export const Header = ({ account, onRefreshed }) => {
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} strokeWidth={1.5} />
             {refreshing ? "Actualizando…" : "Actualizar datos"}
           </Button>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="p-2 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            title="Cerrar sesión"
+          >
+            <LogOut className="w-4 h-4" strokeWidth={1.5} />
+          </button>
         </div>
       </div>
     </header>

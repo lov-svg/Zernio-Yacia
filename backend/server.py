@@ -7,12 +7,14 @@ from zoneinfo import ZoneInfo
 import requests
 from io import BytesIO
 
-from fastapi import FastAPI, APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from sqlalchemy import text
+import jwt as pyjwt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=True)
@@ -26,6 +28,26 @@ api = APIRouter(prefix="/api")
 
 ACCOUNT_ID = os.environ["ZERNIO_ACCOUNT_ID"]
 TZ = os.environ.get("DASHBOARD_TZ", "America/Mexico_City")
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+
+PUBLIC_PATHS = {"/api", "/api/"}
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS" or not request.url.path.startswith("/api"):
+            return await call_next(request)
+        if request.url.path in PUBLIC_PATHS:
+            return await call_next(request)
+        auth = request.headers.get("authorization", "")
+        if not auth.startswith("Bearer "):
+            return JSONResponse(status_code=401, content={"detail": "No autorizado"})
+        token = auth[7:]
+        try:
+            pyjwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+        except Exception:
+            return JSONResponse(status_code=401, content={"detail": "Token inválido o expirado"})
+        return await call_next(request)
 
 
 class DiscardBody(BaseModel):
@@ -462,6 +484,7 @@ def discard(idea_id: int, body: DiscardBody):
 
 app.include_router(api)
 
+app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

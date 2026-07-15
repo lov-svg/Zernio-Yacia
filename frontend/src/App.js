@@ -3,6 +3,7 @@ import "@/App.css";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
+import { LoginPage } from "@/components/LoginPage";
 import ResumenTab from "@/components/tabs/ResumenTab";
 import TendenciaTab from "@/components/tabs/TendenciaTab";
 import AudienciaTab from "@/components/tabs/AudienciaTab";
@@ -12,6 +13,7 @@ import FrecuenciaTab from "@/components/tabs/FrecuenciaTab";
 import IdeasTab from "@/components/tabs/IdeasTab";
 import BandejaTab from "@/components/tabs/BandejaTab";
 import api from "@/lib/api";
+import supabase from "@/lib/supabase";
 
 const TABS = [
   { value: "resumen", label: "Resumen" },
@@ -25,14 +27,35 @@ const TABS = [
 ];
 
 function App() {
+  const [session, setSession] = useState(undefined);
   const [account, setAccount] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadAccount = useCallback(() => {
-    api.get("/dashboard/account").then((r) => setAccount(r.data)).catch(() => {});
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    return () => subscription.unsubscribe();
   }, []);
 
+  const loadAccount = useCallback(() => {
+    if (!session) return;
+    api.get("/dashboard/account").then((r) => setAccount(r.data)).catch(() => {});
+  }, [session]);
+
   useEffect(() => { loadAccount(); }, [loadAccount, refreshKey]);
+
+  if (session === undefined) {
+    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+      <p className="text-stone-400 text-sm">Cargando…</p>
+    </div>;
+  }
+
+  if (!session) {
+    return <>
+      <Toaster position="top-center" richColors />
+      <LoginPage onLogin={() => {}} />
+    </>;
+  }
 
   return (
     <div className="App min-h-screen bg-[#FDFBF7]">
