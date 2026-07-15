@@ -49,6 +49,14 @@ def get_account():
         snap = _rows(conn, "SELECT * FROM account_snapshot WHERE platform = 'instagram'")
         health = _rows(conn, "SELECT * FROM account_health WHERE platform = 'instagram'")
         last = _rows(conn, "SELECT * FROM refresh_log WHERE status = 'ok' ORDER BY id DESC LIMIT 1")
+    # Regenerate profile_picture fresh from Zernio (URLs expire)
+    if snap:
+        try:
+            accounts = refresh_service.z.list_accounts("instagram").get("accounts", [])
+            if accounts:
+                snap[0]["profile_picture"] = accounts[0].get("profilePicture")
+        except Exception:
+            pass
     return {
         "snapshot": snap[0] if snap else None,
         "health": health[0] if health else None,
