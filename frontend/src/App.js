@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import "@/App.css";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
+import { Sidebar } from "@/components/Sidebar";
 import { LoginPage } from "@/components/LoginPage";
 import ResumenTab from "@/components/tabs/ResumenTab";
 import TendenciaTab from "@/components/tabs/TendenciaTab";
@@ -14,17 +15,6 @@ import IdeasTab from "@/components/tabs/IdeasTab";
 import BandejaTab from "@/components/tabs/BandejaTab";
 import api from "@/lib/api";
 import supabase from "@/lib/supabase";
-
-const TABS = [
-  { value: "resumen", label: "Resumen" },
-  { value: "tendencia", label: "Tendencia" },
-  { value: "audiencia", label: "Audiencia" },
-  { value: "posts", label: "Posts" },
-  { value: "cuando", label: "Cuándo publicar" },
-  { value: "frecuencia", label: "Frecuencia" },
-  { value: "bandeja", label: "Bandeja" },
-  { value: "ideas", label: "Ideas" },
-];
 
 function App() {
   const [session, setSession] = useState(undefined);
@@ -61,22 +51,10 @@ function App() {
     <div className="App min-h-screen bg-[#FDFBF7]">
       <Toaster position="top-center" richColors />
       <Header account={account} onRefreshed={() => setRefreshKey((k) => k + 1)} />
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="resumen">
-          <div className="overflow-x-auto -mx-4 px-4 mb-8">
-            <TabsList className="bg-transparent border-b border-[#E8E4DB] rounded-none w-full justify-start h-auto p-0 gap-1">
-              {TABS.map((t) => (
-                <TabsTrigger
-                  key={t.value}
-                  value={t.value}
-                  data-testid={`tab-${t.value}`}
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#D17D5B] data-[state=active]:text-[#D17D5B] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3 text-sm text-stone-500 whitespace-nowrap"
-                >
-                  {t.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
+      <div className="max-w-[1400px] mx-auto flex items-start">
+        <Tabs defaultValue="resumen" orientation="vertical" className="flex w-full">
+          <Sidebar />
+          <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-8">
           <TabsContent value="resumen" key={`r-${refreshKey}`}><ResumenTab /></TabsContent>
           <TabsContent value="tendencia" key={`t-${refreshKey}`}><TendenciaTab /></TabsContent>
           <TabsContent value="audiencia" key={`a-${refreshKey}`}><AudienciaTab /></TabsContent>
@@ -85,8 +63,9 @@ function App() {
           <TabsContent value="frecuencia" key={`f-${refreshKey}`}><FrecuenciaTab /></TabsContent>
           <TabsContent value="bandeja" key={`b-${refreshKey}`}><BandejaTab /></TabsContent>
           <TabsContent value="ideas"><IdeasTab /></TabsContent>
+          </main>
         </Tabs>
-      </main>
+      </div>
     </div>
   );
 }
