@@ -1,0 +1,37 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "ZERNIO_API_KEY",
+      "description": "Zernio API key (Instagram analytics provider) — from your Zernio account dashboard",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "ZERNIO_ACCOUNT_ID",
+      "description": "Zernio account ID for the Instagram account being tracked — from your Zernio account dashboard",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "ANTHROPIC_API_KEY",
+      "description": "Anthropic API key (Claude) used for idea generation — from console.anthropic.com",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "SUPABASE_JWT_SECRET",
+      "description": "Supabase project JWT secret (Project Settings → API) — used by the backend to verify auth tokens",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "REACT_APP_SUPABASE_URL",
+      "description": "Supabase project URL (https://xxxxx.supabase.co) — used by the frontend for auth",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "REACT_APP_SUPABASE_ANON_KEY",
+      "description": "Supabase anon public key (Project Settings → API) — used by the frontend for auth",
+      "requiredAtBoot": false
+    }
+  ]
+}
